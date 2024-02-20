@@ -1,95 +1,68 @@
-import { Layout, Column, Plane } from './enums';
-import cityBackground from './assets/images/city-background.png';
-import airplaneImage from './assets/images/airplane.png';
-import buildingImage from './assets/images/building1.png';
-import buildingImage2 from './assets/images/building2.png';
-import buildingImage3 from './assets/images/building3.png';
-import buildingImage4 from './assets/images/building4.png';
-import buildingImage5 from './assets/images/building5.png';
-import columnImage from './assets/images/column.png';
-import cloudImage from './assets/images/cloud.png';
+import { PubSub, GameEngine } from "./engine";
+import { ISpawnItem } from './engine/types';
+import { Layout, GameEvents } from './game/enums';
+import Game, { IExtendedGameProperties } from './game/Game';
+import { createInitialGameSpawns } from './game/spawns';
+
 import './assets/style/style.css';
 
-const initialize = function (
-  canvas: HTMLCanvasElement,
-  context: CanvasRenderingContext2D
-) {
-  canvas.width  = Layout.Width;
-  canvas.height = Layout.Height;
-
-  const cityBackgroundImage = new Image();
-  cityBackgroundImage.src = cityBackground;
-
-  cityBackgroundImage.onload = () => {
-    context.drawImage(cityBackgroundImage, 0, 0, canvas.width, canvas.height);
-  };
+const GAME_PROPERTIES = {
+  velocityX: -2,
+  velocityY: 0,
+  fallSpeed: 0.4,
+  width: Layout.Width,
+  height: Layout.Height,
 }
 
 window.onload = () => {
-  const canvas: HTMLCanvasElement = document.getElementsByTagName('canvas')[0];
-  const context = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const SOIL_HEIGHT = 120;
+  const root = document.getElementById('gameBody') as HTMLElement;
 
-  context.fillRect(0, 0, 100, 100)
+  const eventBus = new PubSub();
 
-  initialize(canvas, context);
+  let spawns = {} as Record<string, ISpawnItem> ;
 
-  const plane = new Image();
-  plane.src = airplaneImage;
-  plane.onload = function() {
-    context.drawImage(plane, 50, (canvas.height/2) - 20, Plane.Width, Plane.Height);
-  }
+  eventBus.subscribe(GameEvents.GameInitialized, () => {
+    spawns = createInitialGameSpawns(eventBus);
+  });
 
-  const building = new Image();
-  building.src = buildingImage;
-  building.onload = function() {
-    context.globalAlpha = 0.05;
-    context.drawImage(building, 450, 340, 320, 340);
-    context.globalAlpha = 1;
-  }
+  const gameEngine = new GameEngine({ width: GAME_PROPERTIES.width, height: GAME_PROPERTIES.height});
 
-  const building2 = new Image();
-  building2.src = buildingImage2;
-  building2.onload = function() {
-    context.globalAlpha = 0.15;
-    context.drawImage(building2, 160, 370, 180, 300);
-    context.globalAlpha = 1;
-  }
+  const game = new Game(GAME_PROPERTIES, gameEngine, eventBus);
 
-  const building3 = new Image();
-  building3.src = buildingImage3;
-  building3.onload = function() {
-    context.globalAlpha = 0.025;
-    context.drawImage(building3, 10, 360, 320, 340);
-    context.globalAlpha = 1;
-  }
+  game.renderCanvasInDiv(root);
 
-  const building4 = new Image();
-  building4.src = buildingImage4;
-  building4.onload = function() {
-    context.globalAlpha = 0.05;
-    context.drawImage(building4, 450, 180, 160, 500);
-    context.globalAlpha = 1;
-  }
+  eventBus.subscribe(GameEvents.GameStarted, ({ player }) => {
 
-  const building5 = new Image();
-  building5.src = buildingImage5;
-  building5.onload = function() {
-    context.globalAlpha = 0.05;
-    context.drawImage(building5, 450, 80, 160, 600);
-    context.globalAlpha = 1;
-  }
+    game.registerUpdate((gameProperties: IExtendedGameProperties) => {
+      const playerVelocityY = player.velocityY + gameProperties.fallSpeed;
+      const dy = player.positionY + playerVelocityY;
+      const topOfSoil = game.properties.height - SOIL_HEIGHT - player.height;
+      const positionY = Math.max(0, Math.min(dy, topOfSoil));
 
-  const column = new Image();
-  column.src = columnImage;
-  column.onload = function() {
-    context.drawImage(column, 0, 0, Column.Width, Column.Height);
-  }
+      if (player.positionY >= topOfSoil || game.hasCollision()) {
+        game.stopGame();
+        return;
+      }
+  
+      player.updateProperties({
+        positionY: positionY < 0 ? 0 : positionY,
+        velocityY: playerVelocityY
+      });
+    });
 
-  const cloud = new Image();
-  cloud.src = cloudImage;
-  cloud.onload = function() {
-    context.globalAlpha = 0.2;
-    context.drawImage(cloud, 160, 89, 160, 89);
-    context.globalAlpha = 1;
-  }
+    const { buildingSpawn, columnSpawn } = spawns;
+
+    game.schedule(buildingSpawn.spawn, 4000);
+    game.schedule(columnSpawn.spawn, 3000);
+  });
+
+  eventBus.subscribe(GameEvents.GameOver, ({ player }) => {
+    player.updateProperties({
+      velocityY: 0
+    });
+  });
+
+  document.addEventListener('pointerdown', game.handleUserEvents);
+  document.addEventListener('keydown', game.handleUserEvents);
 };

@@ -25,5 +25,10 @@ body {
 }
 
 #canvas {
-  max-width: 100%;
+  width: 760px;
+  height: 760px;
+  background-color: #abdfef;
+  background-image: url("../images//background.jpg");
+  background-size: cover;
+  background-position: bottom left;
 }
