@@ -23,7 +23,7 @@ class Game implements IGame {
   cacheProperties;
   #gameObjects: Record<string, IGameObject>;
   #eventBus;
-  #gameId
+  // #gameId
   #gameEngine;
 
   constructor(properties: IExtendedGameProperties, gameEngine: IGameEngine, eventBus: IPubSub) {
@@ -37,7 +37,7 @@ class Game implements IGame {
     this.isGameOver = false;
     this.player = null as unknown as IPlayer;
     this.#gameObjects = {};
-    this.#gameId = 0;
+    // this.#gameId = 0;
     this.#eventBus = eventBus;
     this.#gameEngine = gameEngine;
     this.#addSubscriptions();

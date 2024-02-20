@@ -88,13 +88,13 @@ class GameObject implements IGameObject {
     context.globalAlpha = 1;
   }
 
-  setHasEntered(object: IGameObject): boolean { 
-    return this.#hasEntered
+  setHasEntered(value: boolean): boolean { 
+    return this.#hasEntered = value
   }
 
   setHasExited(value: boolean) { 
     this.#hasExited = value;
-   }
+  }
 
   hasEntered(): boolean { 
     return this.#hasEntered
