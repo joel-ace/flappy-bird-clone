@@ -23,7 +23,7 @@ export interface IGameObject extends IGameObjectPosition, IGameObjectPhysic, Rea
   renderLayer: number;
   draw: (context: CanvasRenderingContext2D) => void;
   updateProperties: (properties: Partial<IGameObjectProperties>) => void
-  setHasEntered: (object: IGameObject) => boolean;
+  setHasEntered: (value: boolean) => void;
   setHasExited: (value: boolean) => void;
   hasEntered: Callback;
   hasExited: () => boolean;
