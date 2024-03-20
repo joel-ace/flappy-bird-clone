@@ -1,14 +1,19 @@
-import { Layout } from '../enums';
 import { SpawnItem } from '../../engine';
-import { ISpawnItem, IPubSub } from '../../engine/types';
+import { ISpawnItem, IPubSub, IGameProperties } from '../../engine/types';
 import ColumnSpan from './ColumnSpan';
-import { BUILDING_SPAWNS, COLUMN_SPAWNS } from './constants';
+import { buildingSpawns, columnsSpawns } from './constants';
 
-export const createInitialGameSpawns = (eventBus: IPubSub): Record<string, ISpawnItem> => {
-  const buildingSpawn = new SpawnItem(BUILDING_SPAWNS, eventBus);
-  buildingSpawn.spawnInitialItem({ positionX: Layout.Width/2 });
+export const createInitialGameSpawns = (
+  gameProperties: IGameProperties,
+  eventBus: IPubSub
+): Record<string, ISpawnItem> => {
+  const buildingSpawn = new SpawnItem(
+    buildingSpawns(gameProperties.width, gameProperties.height),
+    eventBus
+  );
+  buildingSpawn.spawnInitialItem({ positionX: gameProperties.width/2 });
 
-  const columnSpawn = new ColumnSpan(COLUMN_SPAWNS, eventBus);
+  const columnSpawn = new ColumnSpan(columnsSpawns(gameProperties.width), eventBus);
   columnSpawn.spawnInitialItem();
 
   return { buildingSpawn, columnSpawn }

@@ -1,6 +1,6 @@
 export enum Layout {
-  Width = 760,
-  Height = 760,
+  Width = window.innerWidth,
+  Height = window.innerHeight,
 }
 
 export enum Plane {
@@ -18,7 +18,7 @@ export enum SpawnObjectTypes {
   Column = 'Column',
 }
 
-export enum GameObjectTypes {
+export enum GameObjectCategory {
   Player = 'Player',
   Obstacle = 'Obstacle',
   Cosmetic = 'Cosmetic',

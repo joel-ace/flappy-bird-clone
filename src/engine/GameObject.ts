@@ -16,16 +16,13 @@ class GameObject implements IGameObject {
   height;
   type;
   opacity;
-  reRender = false;
+  reRender = true;
   renderLayer;
-  #imgUrl;
-  #image;
   #hasEntered = false;
   #hasExited;
 
   constructor({
     type,
-    imgUrl,
     positionX,
     positionY,
     width,
@@ -35,7 +32,6 @@ class GameObject implements IGameObject {
     renderLayer
   }: ICreateGameObject){
     this.type = type;
-    this.#imgUrl = imgUrl;
     this.positionX = positionX;
     this.positionY = positionY;
     this.velocityX = 0;
@@ -45,19 +41,12 @@ class GameObject implements IGameObject {
     this.opacity = opacity ?? 1;
     this.renderLayer = renderLayer ?? RenderLayer.One;
     this.name = name ?? this.#generateName();
-    this.#image = this.#getImage();
     this.#hasExited = false;
-  }
-
-  #getImage(): HTMLImageElement {
-    const image = new Image();
-    image.src = this.#imgUrl;
-    return image;
   }
 
   #generateName(): string {
     const randomSuffix = Math.floor(Math.random() * 1000);
-    return `${this.type}_${randomSuffix}`;
+    return `${this.type}_${randomSuffix}_${Date.now()}`;
   }
 
   updateProperties(properties: Partial<IGameObjectProperties>): void {
@@ -72,21 +61,7 @@ class GameObject implements IGameObject {
     });
   }
 
-  draw(context: CanvasRenderingContext2D) {
-    if (this.opacity) {
-      context.globalAlpha = this.opacity;
-    }
-
-    context.drawImage(
-      this.#image,
-      this.positionX,
-      this.positionY,
-      this.width,
-      this.height
-    );
-
-    context.globalAlpha = 1;
-  }
+  draw(_context: CanvasRenderingContext2D) {}
 
   setHasEntered(value: boolean): boolean { 
     return this.#hasEntered = value

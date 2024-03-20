@@ -1,5 +1,5 @@
-import GameObject from './GameObject';
-import { GameEngineEvents } from './enums';
+import GameObjectFactory from './GameObjectFactory';
+import { GameEngineEvents, GameObjectTypes } from './enums';
 import {
   IPubSub,
   IGameObject,
@@ -19,7 +19,10 @@ class SpawnItem implements ISpawnItem {
   }
 
   protected getSpawnObject = (): IGameObject[]  => {
-    return this.spawnObjectProps.map((objectProps) => new GameObject({ ...objectProps }));
+    return this.spawnObjectProps.map((objectProps) => GameObjectFactory.createGameObject(
+      GameObjectTypes.Image,
+      { ...objectProps }
+    ));
   }
 
   protected updateGameObjectPosition = (spawnObject: IGameObject, position?: Partial<IGameObjectPosition>): void => {

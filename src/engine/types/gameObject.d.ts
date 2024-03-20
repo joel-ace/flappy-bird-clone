@@ -1,4 +1,4 @@
-import { RenderLayer } from '../enums';
+import { RenderLayer, GameObjectTypes } from '../enums';
 import { Callback } from './gameEngine';
 
 export interface IGameObjectPosition {
@@ -33,9 +33,37 @@ export interface IGameObject extends IGameObjectPosition, IGameObjectPhysic, Rea
 export interface ICreateGameObject extends IGameObjectPosition, IGameObjectSize {
   name?: string,
   type: string,
-  imgUrl: string,
   renderLayer?: RenderLayer
   opacity?: number;
 };
 
-export interface IGameObjectProperties extends Partial<IGameObjectPosition>, Partial<IGameObjectPhysic> {};
+export type CreateGameObjecReturnType<T extends GameObjectTypes> = (
+  T extends GameObjectTypes.Rectangle ? RectangleGameObject :
+  T extends GameObjectTypes.Image ? ImageGameObject :
+  T extends GameObjectTypes.Text ? TextGameObject :
+  IGameObject
+);
+
+export interface IGameObjectFactory {
+  createGameObject: <T extends GameObjectTypes>(type: T, options: any) => CreateGameObjecReturnType<T>
+}
+
+export interface IGameObjectProperties extends Partial<IGameObjectPosition>, Partial<IGameObjectPhysic>, Partial<IGameObjectSize> {};
+
+export interface ICreateRectangleGameObject extends ICreateGameObject {
+  color: string;
+}
+
+export interface ICreateImageGameObject extends ICreateGameObject { imgUrl: string }
+
+export interface ICreateTextGameObject extends ICreateGameObject {
+  fontSize: number;
+  fontFace: string;
+  fontWeight: string;
+  color: string;
+  text: string;
+  multiline: boolean;
+  maxWidth: number;
+  alignCenter: boolean;
+}
+

@@ -1,4 +1,5 @@
-import { GameObjectTypes, Column, RenderLayer, Layout } from '../enums';
+import { GameObjectCategory, Column, RenderLayer, Layout } from '../enums';
+import { SOIL_HEIGHT } from '../constants';
 import columnImage from '../../assets/images/column.png';
 import columnButtomImage from '../../assets/images/column-bottom.png';
 import buildingImage from '../../assets/images/building1.png';
@@ -8,7 +9,7 @@ import buildingImage4 from '../../assets/images/building4.png';
 import buildingImage5 from '../../assets/images/building5.png';
 
 export const COLUMNS = {
-  type: GameObjectTypes.Obstacle,
+  type: GameObjectCategory.Obstacle,
   imgUrl: [columnImage, columnButtomImage],
   positionX: Layout.Width,
   positionY: 0,
@@ -18,7 +19,7 @@ export const COLUMNS = {
 }
 
 export const BUILDINGS = {
-  type: GameObjectTypes.Cosmetic,
+  type: GameObjectCategory.Cosmetic,
   imgUrl: [buildingImage, buildingImage2, buildingImage3, buildingImage4, buildingImage5],
   positionX: Layout.Width,
   positionY: [310, 345, 335, 150, 45],
@@ -28,14 +29,18 @@ export const BUILDINGS = {
   renderLayer: RenderLayer.Four
 }
 
-export const BUILDING_SPAWNS = BUILDINGS.imgUrl.map((image, index) => ({
+export const buildingSpawns = (gameWidth: number, gameHeight: number) => BUILDINGS.imgUrl.map((image, index) => ({
   ...BUILDINGS,
+  positionX: gameWidth,
   imgUrl: image,
-  positionY: BUILDINGS.positionY[index],
   width: BUILDINGS.width[index],
+  positionY: gameHeight - BUILDINGS.height[index] - SOIL_HEIGHT,
   height: BUILDINGS.height[index],
   opacity: BUILDINGS.opacity[index]
 }));
 
-export const COLUMN_SPAWNS = COLUMNS.imgUrl.map((image) => ({ ...COLUMNS, imgUrl: image }));
-
+export const columnsSpawns = (positionX: number) => COLUMNS.imgUrl.map((image) => ({
+  ...COLUMNS,
+  positionX,
+  imgUrl: image
+}));
