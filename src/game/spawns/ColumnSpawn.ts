@@ -1,22 +1,34 @@
 import { SpawnItem } from '../../engine';
-import { IPubSub, IGameObject, ICreateGameObject } from '../../engine/types';
-import { GameEvents, Layout } from '../enums';
+import { IPubSub, IGameObject, ICreateGameObject, IGameProperties } from '../../engine/types';
+import { SOIL_HEIGHT } from '../constants';
+import { GameEvents } from '../enums';
 
 class ColumnSpan extends SpawnItem {
   protected eventBus: IPubSub;
+  #gameProperties;
 
-  constructor(spawnObjectProps: ICreateGameObject[], eventBus: IPubSub) {
+  constructor(
+    spawnObjectProps: ICreateGameObject[],
+    gameProperties: IGameProperties,
+    eventBus: IPubSub
+  ) {
     super(spawnObjectProps, eventBus);
     this.eventBus = eventBus;
+    this.#gameProperties = gameProperties;
   }
 
   #addSpawnObjectToGame = (): Record<string, IGameObject> => {
     const columns = this.getSpawnItem() as IGameObject[];
     const [topColumn, bottomColumn] = columns;
-    const positionY = Math.floor(Layout.Height/4 + Math.random() * (Layout.Height/2 - Layout.Height/4));
 
-    this.updateGameObjectPosition(topColumn, { positionY:  -positionY });
-    this.updateGameObjectPosition(bottomColumn, { positionY: bottomColumn.height - positionY + 150 });
+    const availableHeight = this.#gameProperties.height - SOIL_HEIGHT;
+    const minPosition = availableHeight * 0.25;
+    const maxPosition = availableHeight * 0.75;
+
+    const positionY = (Math.random() * (maxPosition - minPosition) + minPosition) - topColumn.height;
+
+    this.updateGameObjectPosition(topColumn, { positionY: positionY });
+    this.updateGameObjectPosition(bottomColumn, { positionY: bottomColumn.height + positionY + 150 });
 
     this.eventBus.publish(GameEvents.AddGameObject, [topColumn, bottomColumn]);
     return { topColumn, bottomColumn };
