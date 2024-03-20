@@ -1,14 +1,11 @@
-import { GameObject } from '../engine';
 import {
   IGameEngine,
   IGameProperties,
   IPubSub,
   IGameObject,
-  ICreateGameObject
 } from '../engine/types';
-// import { DEFAULT_GAME_PROPERTIES } from './constants';
 import { createGameObjects } from './utils';
-import { GameEvents, GameObjectTypes } from './enums';
+import { GameEvents, GameObjectCategory } from './enums';
 import { IPlayer } from './Player';
 
 class Game implements IGame {
@@ -21,9 +18,8 @@ class Game implements IGame {
   isGameRunning;
   isGameOver;
   cacheProperties;
-  #gameObjects: Record<string, IGameObject>;
+  #gameObjects: Record<string, any>;
   #eventBus;
-  // #gameId
   #gameEngine;
 
   constructor(properties: IExtendedGameProperties, gameEngine: IGameEngine, eventBus: IPubSub) {
@@ -37,7 +33,6 @@ class Game implements IGame {
     this.isGameOver = false;
     this.player = null as unknown as IPlayer;
     this.#gameObjects = {};
-    // this.#gameId = 0;
     this.#eventBus = eventBus;
     this.#gameEngine = gameEngine;
     this.#addSubscriptions();
@@ -45,12 +40,24 @@ class Game implements IGame {
   }
 
   initialize = () => {
-    const { background, player, soil } = createGameObjects();
-    this.#gameObjects = { background, player, soil };
+    const { background, player, soil, score, infoText, gameStateText, rectangleBg } = createGameObjects(
+      this.properties.width,
+      this.properties.height
+    );
+    this.#gameObjects = { background, player, soil, score, infoText, gameStateText, rectangleBg };
     this.player = player as IPlayer;
+    this.score = 0;
     this.properties = { ...this.cacheProperties };
 
-    this.#gameEngine.addGameObject([background, player, soil]);
+    infoText.updateProperties({
+      positionX: (this.properties.width / 2) - (infoText.width / 2),
+    });
+
+    gameStateText.updateProperties({
+      positionX: (this.properties.width / 2) - (gameStateText.width / 2),
+    });
+
+    this.#gameEngine.addGameObject([background, player, soil, rectangleBg, infoText, gameStateText, score]);
 
     this.#eventBus.publish(GameEvents.GameInitialized, {
       gameProperties: this.properties,
@@ -65,6 +72,10 @@ class Game implements IGame {
   startGame = () => {
     this.isGameOver = false;
     this.isGameRunning = true;
+
+    this.#gameObjects.infoText.setRerender(false);
+    this.#gameObjects.rectangleBg.setRerender(false);
+    this.#gameObjects.gameStateText.setRerender(false);
 
     this.#eventBus.publish(GameEvents.GameStarted, {
       gameProperties: this.properties,
@@ -90,10 +101,18 @@ class Game implements IGame {
       player: this.player,
       gameProperties: this.properties
     });
-  }
 
-  createGameObject = (objectPayload: ICreateGameObject): IGameObject => {
-    return new GameObject(objectPayload);
+    this.#gameObjects.gameStateText.updateProperties({ text: 'Game Over' });
+
+    this.#gameObjects.score.updateProperties({
+      text: `Score: ${this.score}`,
+      positionX: (this.properties.width / 2) - (this.#gameObjects.score.width / 2),
+      positionY: (this.properties.height / 2) + (this.#gameObjects.rectangleBg.height/2) - this.#gameObjects.score.width/2
+    });
+
+    this.#gameObjects.infoText.setRerender(true);
+    this.#gameObjects.rectangleBg.setRerender(true);
+    this.#gameObjects.gameStateText.setRerender(true);
   }
 
   addGameObject = (objects: IGameObject | IGameObject[]): void => {
@@ -116,7 +135,7 @@ class Game implements IGame {
 
   #updateScore = (player: IGameObject, obstacle: IGameObject) => {
     if (
-      obstacle.type === GameObjectTypes.Obstacle &&
+      obstacle.type === GameObjectCategory.Obstacle &&
       player.positionX > obstacle.positionX + obstacle.width &&
       !obstacle.hasExited()
     ) {
@@ -130,11 +149,15 @@ class Game implements IGame {
       const obstacle = this.#gameEngine.gameObjects[i];
 
       this.#updateScore(this.player, obstacle);
-
-      if (obstacle.type === GameObjectTypes.Obstacle && this.#checkCollision(this.player, obstacle)){
+      if (obstacle.type === GameObjectCategory.Obstacle && this.#checkCollision(this.player, obstacle)){
         return true;
       }
     };
+
+    this.#gameObjects.score.updateProperties({
+      text: `Score: ${this.score}`
+    });
+
     return false;
   }
   
@@ -156,10 +179,6 @@ class Game implements IGame {
     this.#gameEngine.schedule(callback, delay);
   }
 
-  // cancelSchedule = (scheduleId: number): void => {
-  //   this.#gameEngine.cancelSchedule(scheduleId);
-  // }
-
   cancelAllSchedules = (): void => {
     this.#gameEngine.cancelAllSchedules();
   }
@@ -173,13 +192,26 @@ class Game implements IGame {
       return;
     }
 
-     if (this.isGameRunning) {
+    if (this.isGameRunning) {
       this.player.move();
     } else if (this.isGameOver) {
       this.restartGame();
     } else {
       this.startGame();
     }    
+  }
+
+  handleCanvasResize = (event: Event) => {
+    const currentTarget = event.currentTarget as Window;
+    const width = currentTarget.innerWidth;
+    const height = currentTarget.innerHeight;
+    this.properties.width = this.cacheProperties.width = width;
+    this.properties.height = this.cacheProperties.height = height;
+
+    this.#gameObjects.background.updateProperties({ width, height });
+    this.#gameObjects.soil.updateProperties({ width });
+
+    this.#gameEngine.resizeCanvas(width, height);
   }
 }
 
@@ -204,9 +236,7 @@ export interface IGame {
   startGame: () => void;
   restartGame: () => void;
   addGameObject: (object: IGameObject | IGameObject[]) => void;
-  createGameObject: (objectPayload: ICreateGameObject) => IGameObject;
   schedule: (callback: (...args: any[]) => void, delay: number) => void ;
-  // cancelSchedule: (intervalId: number) => void;
   cancelAllSchedules: () => void;
   registerUpdate: (updateCallback: (properties: IExtendedGameProperties) => void) => void;
 }

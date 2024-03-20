@@ -1,6 +1,6 @@
 import { PubSub, GameEngine } from "./engine";
 import { ISpawnItem } from './engine/types';
-import { Layout, GameEvents } from './game/enums';
+import { GameEvents } from './game/enums';
 import Game, { IExtendedGameProperties } from './game/Game';
 import { createInitialGameSpawns } from './game/spawns';
 
@@ -10,23 +10,23 @@ const GAME_PROPERTIES = {
   velocityX: -2,
   velocityY: 0,
   fallSpeed: 0.4,
-  width: Layout.Width,
-  height: Layout.Height,
+  width: window.innerWidth,
+  height: window.innerHeight,
 }
+
+const eventBus = new PubSub();
 
 window.onload = () => {
   const SOIL_HEIGHT = 120;
   const root = document.getElementById('gameBody') as HTMLElement;
 
-  const eventBus = new PubSub();
-
   let spawns = {} as Record<string, ISpawnItem> ;
 
-  eventBus.subscribe(GameEvents.GameInitialized, () => {
-    spawns = createInitialGameSpawns(eventBus);
+  eventBus.subscribe(GameEvents.GameInitialized, ({ gameProperties }) => {
+    spawns = createInitialGameSpawns(gameProperties, eventBus);
   });
 
-  const gameEngine = new GameEngine({ width: GAME_PROPERTIES.width, height: GAME_PROPERTIES.height});
+  const gameEngine = new GameEngine({ width: window.innerWidth, height: window.innerHeight });
 
   const game = new Game(GAME_PROPERTIES, gameEngine, eventBus);
 
@@ -65,4 +65,5 @@ window.onload = () => {
 
   document.addEventListener('pointerdown', game.handleUserEvents);
   document.addEventListener('keydown', game.handleUserEvents);
+  window.addEventListener('resize', game.handleCanvasResize);
 };

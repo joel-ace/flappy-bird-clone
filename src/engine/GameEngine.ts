@@ -1,29 +1,34 @@
 import Utils from  './Utils';
+import { DEFAULT_CANVAS_SIZE } from './enums';
 import {
   Callback,
   IGameEngine,
   IGameObject,
   IGameObjectSize,
   CachedObjectProperties,
-  CachedObjectPropertiesKey,
 } from './types';
 
 class GameEngine implements IGameEngine{
+  readonly fps: number;
   gameObjects;
   gameObjectsCache;
+  #lastTimestamp: number;
   #updates: Callback[];
-  #interruptGameLoop;
   #intervals;
   #canvas: HTMLCanvasElement;
   #context: CanvasRenderingContext2D;
   #bufferCanvas: HTMLCanvasElement;
   #bufferCanvasContext: CanvasRenderingContext2D;
 
-  constructor({ width, height }: IGameObjectSize) {
+  constructor({
+    width = DEFAULT_CANVAS_SIZE.Width,
+    height = DEFAULT_CANVAS_SIZE.Height
+  }: IGameObjectSize) {
     this.gameObjects = [] as IGameObject[];
-    this.gameObjectsCache = new Map<CachedObjectPropertiesKey, CachedObjectProperties>();
+    this.gameObjectsCache = new Map<string, CachedObjectProperties>();
+    this.fps = 120;
+
     this.#updates = [];
-    this.#interruptGameLoop = false;
     this.#intervals = new Set<number>();
 
     const { mainCanvas, mainCanvascontext, bufferCanvas, bufferCanvasContext } = this.#init({ width, height });
@@ -31,6 +36,7 @@ class GameEngine implements IGameEngine{
     this.#context = mainCanvascontext;
     this.#bufferCanvas = bufferCanvas;
     this.#bufferCanvasContext = bufferCanvasContext;
+    this.#lastTimestamp = 0;
   }
 
   #init = (canvasSize: IGameObjectSize): {
@@ -68,17 +74,23 @@ class GameEngine implements IGameEngine{
   clearGameObjects = (): void => {
     this.gameObjects = [];
     this.#updates = [];
+    this.gameObjectsCache.clear();
   }
 
   // TODO: find a way to cache updates or remove cache completely
   addGameObject = (object: IGameObject | IGameObject[]): void => {
     if (Array.isArray(object)) {
       this.gameObjects.push(...object);
-      object.reduce((acc, item) => acc.set(item.name as CachedObjectPropertiesKey, Utils.getClassProperties(item)), this.gameObjectsCache);
+      object.reduce((acc, item) => acc.set(item.name, Utils.getClassProperties(item)), this.gameObjectsCache);
     } else {
       this.gameObjects.push(object);
-      this.gameObjectsCache.set(object.name as CachedObjectPropertiesKey, Utils.getClassProperties(object))
+      this.gameObjectsCache.set(object.name, Utils.getClassProperties(object))
     }
+  }
+
+  resizeCanvas = (width: number, height: number): void => {
+    this.#canvas.width = this.#bufferCanvas.width = width;
+    this.#canvas.height = this.#bufferCanvas.height = height;
   }
 
   #clearCanvas = (context: CanvasRenderingContext2D): void => {
@@ -110,7 +122,9 @@ class GameEngine implements IGameEngine{
     const sortedGameObjects = this.#sortGameObjectsByRenderLayer();
     this.#bufferCanvasContext.clearRect(0, 0, this.#canvas.width, this.#canvas.height - 120);
     for (const gameObject of sortedGameObjects) {
-      gameObject.draw(this.#bufferCanvasContext);
+      if (gameObject.reRender) {
+        gameObject.draw(this.#bufferCanvasContext);
+      }
     }
   }
 
@@ -124,6 +138,7 @@ class GameEngine implements IGameEngine{
     this.gameObjects.forEach((gameObject, index) => {
       if (gameObject.positionX < -gameObject.width) {
         this.gameObjects.splice(index, 1);
+        this.gameObjectsCache.delete(gameObject.name);
       }
     });
   }
@@ -133,18 +148,19 @@ class GameEngine implements IGameEngine{
     this.#renderToMainCanvas();
   }
 
-  update = (): void => {
-    this.startGameLoop();
-    this.#updateGameObjects();
-    this.render();
+  update = (timestamp: any): void => {
+    const deltaTime = timestamp - this.#lastTimestamp;
+
+    requestAnimationFrame(this.update);
+
+    if (deltaTime > 1000 / this.fps) {
+      this.#updateGameObjects();
+      this.render();
+      this.#lastTimestamp = timestamp;
+    }
   }
 
   registerUpdate = (callback: Callback): void => {
-    if (this.#interruptGameLoop) {
-      console.log('------------------------->>>>')
-      return;
-    }
-
     this.#updates.push(callback);
   }
 
@@ -169,20 +185,7 @@ class GameEngine implements IGameEngine{
   // }
 
   startGameLoop = (): number => {
-    if (this.#interruptGameLoop) {
-      return 0
-    }
     return requestAnimationFrame(this.update);
-  }
-
-  restartGameLoop = (): number => {
-    this.#interruptGameLoop = false;
-    return this.startGameLoop();
-  }
-
-  stopGameLoop = (requestID: number): void => {
-    this.#interruptGameLoop = true;
-    cancelAnimationFrame(requestID);
   }
 }
 

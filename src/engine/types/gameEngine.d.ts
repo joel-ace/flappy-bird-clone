@@ -8,7 +8,9 @@ export interface CachedObjectProperties extends Record<CachedObjectPropertiesKey
 
 export interface IGameEngine {
   gameObjects: IGameObject[];
-  gameObjectsCache: Map<CachedObjectPropertiesKey, CachedObjectProperties>;
+  gameObjectsCache: Map<string, CachedObjectProperties>;
+  readonly fps: number;
+  resizeCanvas: (width: number, height: number) => void;
   clearGameObjects: () => void;
   addGameObject: (gameObject: IGameObject | IGameObject[]) => void;
   render: Callback;
@@ -18,8 +20,6 @@ export interface IGameEngine {
   cancelSchedule: (intervalId: number) => void;
   cancelAllSchedules: Callback;
   startGameLoop: () => number;
-  stopGameLoop: (requestID: number) => void;
-  restartGameLoop: () => number;
-  renderInView: (element: HTMLElement) => void
+  renderInView: (element: HTMLElement) => void;
 }
 

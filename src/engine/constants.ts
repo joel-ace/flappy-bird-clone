@@ -2,7 +2,9 @@ export const ALLOWED_UPDATE_FIELDS_ARRAY = [
   'positionX',
   'positionY',
   'velocityX',
-  'velocityY'
+  'velocityY',
+  'width',
+  'height',
 ];
 
 // For faster lookup

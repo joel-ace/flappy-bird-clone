@@ -1,8 +1,8 @@
-import { GameObject } from '../engine';
-import { ICreateGameObject, IGameObject } from '../engine/types';
-import { GameObjectTypes } from './enums';
+import { ImageGameObject } from '../engine';
+import { ICreateImageGameObject, IGameObject } from '../engine/types';
+import { GameObjectCategory } from './enums';
 
-class Player extends GameObject {
+class Player extends ImageGameObject {
   constructor({
     type,
     imgUrl,
@@ -13,7 +13,7 @@ class Player extends GameObject {
     name,
     opacity,
     renderLayer,
-  }: ICreateGameObject) {
+  }: ICreateImageGameObject) {
     super({
       type,
       imgUrl,
@@ -25,9 +25,7 @@ class Player extends GameObject {
       opacity,
       renderLayer,
     });
-    this.type = GameObjectTypes.Player;
-
-    this.move = this.move.bind(this);
+    this.type = GameObjectCategory.Player;
   }
 
   move = (): void => {
