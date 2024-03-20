@@ -1,7 +1,6 @@
 import { ImageGameObject } from '../engine';
 import { ICreateImageGameObject, IGameObject } from '../engine/types';
 import { GameObjectCategory } from './enums';
-// import ImageGameObject from '../engine/ImageGameObject';
 
 class Player extends ImageGameObject {
   constructor({
