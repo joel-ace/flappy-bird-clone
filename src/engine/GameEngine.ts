@@ -120,7 +120,7 @@ class GameEngine implements IGameEngine{
 
   #renderToBufferCanvas = (): void => {
     const sortedGameObjects = this.#sortGameObjectsByRenderLayer();
-    this.#bufferCanvasContext.clearRect(0, 0, this.#canvas.width, this.#canvas.height - 120);
+    this.#bufferCanvasContext.clearRect(0, 0, this.#canvas.width, this.#canvas.height);
     for (const gameObject of sortedGameObjects) {
       if (gameObject.reRender) {
         gameObject.draw(this.#bufferCanvasContext);
